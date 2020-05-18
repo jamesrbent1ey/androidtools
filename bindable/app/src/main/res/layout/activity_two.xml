@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:context=".MainActivity">
+
+    <lib.bindable.BindableButton
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:bindable="http://schemas.bindable.lib/widget"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="wrap_content"
+            android:text="back"
+            android:id="@+id/bindableButton"
+            bindable:onClickListener="$scope.gotoActivity(com.example.bindable.MainActivity)"
+            android:layout_height="wrap_content"/>
+    <lib.bindable.BindableSpinner
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            xmlns:bindable="http://schemas.bindable.lib/widget"
+            bindable:adapter="lib.bindable.BindableAdapter"
+            bindable:adapterView="@layout/spinnerview"
+            bindable:onItemSelectedListener="$scope.spinnerItemSelected"
+            bindable:adapterModel="spinner1">
+    </lib.bindable.BindableSpinner>
+    <lib.bindable.BindableSpinner
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            xmlns:bindable="http://schemas.bindable.lib/widget"
+            bindable:adapter="lib.bindable.BindableAdapter"
+            bindable:adapterView="@layout/spinnerview"
+            bindable:adapterModel="spinner2"
+            bindable:textSize="20sp"
+            bindable:textColor="blue"
+            bindable:onItemSelectedListener="$scope.spinner2ItemSelected"
+            bindable:enabled="spinner2Enable">
+    </lib.bindable.BindableSpinner>
+
+</LinearLayout>
