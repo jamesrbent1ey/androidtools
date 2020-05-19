@@ -1,0 +1,1 @@
+include ':app', ':messagebroker', ':appcenter_sub', ':appinsights_sub', ':dynatrace_sub'
