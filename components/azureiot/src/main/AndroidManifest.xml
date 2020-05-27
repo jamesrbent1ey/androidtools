@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.bentleyis.azureiot">
+
+    <application>
+        <service
+            android:name=".IotService"
+            android:enabled="true"
+            android:exported="true"></service>
+    </application>
+
+</manifest>
