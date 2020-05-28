@@ -9,6 +9,7 @@ implemenation - such as connecting messaging to Azure services.
 All modules - except app - create libraries for inclusion in other Android applications.
 
 | Module | Description | category |
+| ------ | ----------- | -------- |
 | messagebroker | light message broker implementing Publish-Subscribe pattern/event-based | messaging/communication |
 | appcenter_sub | subscriber to log events to Visual Studio App Center | messaging/communication |
 | appinsights_sub | subscriber to log events to Azure Application Insights | messaging/communication |
