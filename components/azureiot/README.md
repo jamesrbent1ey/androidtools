@@ -17,10 +17,12 @@ There are 2 entry points into the system:
 The DeviceMethodBridge uses the Microkernel Registry to find MethodHandler registrations allowing method 
 invocations from the cloud. IotMessagePublisher publishes cloud messages to the MessageBroker while
 MessageRelay receives Message objects from the MessageBroker, forwarding them to the cloud.
-- IotService is a Bound Service that allows multiple applications send/receive messages to/from the Cloud.
-IotService returns an IotServiceAidl binder which accepts an IotServiceListenerAidl. IotServiceAidl allows
-applications to send messages, IotServiceListenerAidl allows applications to receive messages and method
-calls. Create the service by calling bind with BIND_AUTO_CREATE specified.
+- IotService is a Long-runninng Bound Service that allows multiple applications to send/receive messages 
+to/from the Cloud. An application should call startService, then bind, to support service access from
+multiple applications. IotService returns an IotServiceAidl binder which accepts an IotServiceListenerAidl. 
+IotServiceAidl allows applications to send messages. IotServiceListenerAidl allows applications to receive 
+messages and method calls. For single application support, create the service by calling bind with 
+BIND_AUTO_CREATE specified.
 
 See the appropriate class for configuration requirements.
 

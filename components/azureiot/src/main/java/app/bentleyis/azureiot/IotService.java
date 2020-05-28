@@ -58,7 +58,8 @@ import javax.net.ssl.SSLContext;
 
 /**
  * The IotService allows for a single Bound Service to maintain an IoT Hub connection for multiple
- * applications. Simply bind with BIND_AUTO_CREATE flag set to establish connection.
+ * applications. Simply bind with BIND_AUTO_CREATE flag set to establish connection. To support multiple
+ * applications, an application must call startService then bind.
  *
  * The returned Binder is IotServiceAidl which allows for sending messages to the cloud. It also allows
  * registration of an IotServiceListenerAidl for receiving messages, and executing methods, from the
@@ -81,6 +82,15 @@ public class IotService extends Service implements MessageCallback, DeviceMethod
     private ProxySettings m_proxy;
     private SSLContext m_sslContext;
     DeviceClient m_client;
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        initialize(intent);
+        // based on new guidelines, there is a window in which this service may execute, without
+        // active bindings, before the OS will stop the service. Calling startService will allow
+        // this service to behave just like a bound service, but for more than one application.
+        return START_STICKY;
+    }
 
     @Override
     public synchronized IBinder onBind(Intent intent) {
@@ -225,6 +235,7 @@ public class IotService extends Service implements MessageCallback, DeviceMethod
 
     @Override
     public synchronized void onDestroy() {
+        // this is now called when the service becomes idle (no more bindings from any application)
         if(m_client != null) {
             try {
                 m_client.closeNow();
