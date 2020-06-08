@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.bentleyis.pluginhost">
+
+    <application>
+        <service
+            android:name=".PluginHostService"
+            android:enabled="true"
+            android:exported="true">
+            <meta-data android:name="action" android:value="app.bentleyis.plugin.dummy"/>
+        </service>
+    </application>
+
+</manifest>
