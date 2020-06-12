@@ -1,1 +1,1 @@
-include ':app', ':messagebroker', ':appcenter_sub', ':appinsights_sub', ':dynatrace_sub', ':azureiot', ':microkernel'
+include ':app', ':messagebroker', ':appcenter_sub', ':appinsights_sub', ':dynatrace_sub', ':azureiot', ':microkernel', ':graphing'
