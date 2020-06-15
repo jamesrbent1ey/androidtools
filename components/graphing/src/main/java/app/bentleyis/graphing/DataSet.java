@@ -22,21 +22,17 @@
 
 package app.bentleyis.graphing;
 
-/**
- * A DataPoint is necessary to define the data displayed on the chart
- */
-public class DataPoint
-{
-    // the data's label
+import java.util.LinkedList;
+import java.util.List;
+
+public class DataSet {
     String label;
-    // the value of the data point
-    double value;
-    // the color to display the segment in
+    double max = 0;
+    double min = 0;
     int colorARGB;
-    // radius in pixels. keep near touch area to allow for accurate resolution of touch
-    int pointRadius = 15;
-    // for line graphs, with center origin, this allows for negative positioning
-    double position = Double.MIN_VALUE;
+    LineType lineType;
+    List<DataPoint> dataPoints = new LinkedList<>();
+    private int lineWidth = 1;
 
     public String getLabel() {
         return label;
@@ -46,12 +42,20 @@ public class DataPoint
         this.label = label;
     }
 
-    public double getValue() {
-        return value;
+    public double getMax() {
+        return max;
     }
 
-    public void setValue(double value) {
-        this.value = value;
+    public void setMax(double max) {
+        this.max = max;
+    }
+
+    public double getMin() {
+        return min;
+    }
+
+    public void setMin(double min) {
+        this.min = min;
     }
 
     public int getColorARGB() {
@@ -62,19 +66,45 @@ public class DataPoint
         this.colorARGB = colorARGB;
     }
 
-    public int getPointRadius() {
-        return pointRadius;
+    public LineType getLineType() {
+        return lineType;
     }
 
-    public void setPointRadius(int pointRadius) {
-        this.pointRadius = pointRadius;
+    public void setLineType(LineType lineType) {
+        this.lineType = lineType;
     }
 
-    public double getPosition() {
-        return position;
+    public List<DataPoint> getDataPoints() {
+        return dataPoints;
     }
 
-    public void setPosition(double position) {
-        this.position = position;
+    public void setDataPoints(List<DataPoint> dataPoints) {
+        this.dataPoints = dataPoints;
+        findMax();
+        findMin();
+    }
+
+    private void findMax() {
+        for(DataPoint point: dataPoints) {
+            if(point.getValue() > max) {
+                max = point.getValue();
+            }
+        }
+    }
+
+    private void findMin() {
+        for(DataPoint point: dataPoints) {
+            if(point.getValue() < min) {
+                min = point.getValue();
+            }
+        }
+    }
+
+    public void setLineWidth(int width) {
+        lineWidth = width;
+    }
+
+    public int getLineWidth() {
+        return lineWidth;
     }
 }

@@ -34,7 +34,7 @@ import java.util.LinkedList;
  * - orientation: default is vertical, allow for horizontal
  * - allow setting of value axis set of labels/values, scale the bars appropriately for the value axis
  * - animation?
- * - decorators/builders instead?
+ * - stacked bar charts
  */
 
 /**
@@ -57,7 +57,8 @@ public class BarChartDrawable extends AbstractChartDrawable {
     @Override
     public void draw(Canvas canvas) {
         Rect r = getBounds();
-        r = new Rect(r.left, r.top + margin, r.right - margin, r.bottom);
+        //testing scale
+//        r = new Rect(r.left, r.top + margin, r.right - margin, r.bottom);
 
         // for clarity
         int left = r.left + margin;
@@ -234,7 +235,6 @@ public class BarChartDrawable extends AbstractChartDrawable {
 
     @Override
     public DataPoint getPointFor(MotionEvent event) {
-        // TODO much of this is redundant with draw - refactor to one or more methods
         Rect r = getBounds();
         int xstep = (r.width()-(margin))/(dataPoints.isEmpty()?10:dataPoints.size());
         int xpos = margin;

@@ -28,14 +28,48 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 
 import java.util.LinkedList;
+import java.util.List;
 
+/*
+ *  TODO line of best fit and curve through points
+ */
+
+/**
+ * Shows point an line plots on a grid. The grid origin may be centered to show negative range
+ * and/or value.
+ */
 public class LineChartDrawable extends AbstractChartDrawable {
     int axisColor = 0xff000000;
     int gridColor = 0xffAFAFAF;
     boolean centerOrigin = false;
-    LinkedList<DataPoint> dataPoints = new LinkedList<>();
     int margin = 30;
     boolean showGrid = true;
+
+    LinkedList<DataSet> data = new LinkedList<>();
+
+    /**
+     * Relate a DataPoint to its graph coordinates
+     */
+    class Point {
+        double x;
+        double y;
+        DataPoint point;
+
+        public Point(double x, double y, DataPoint point) {
+            this.x = x;
+            this.y = y;
+            this.point = point;
+        }
+    }
+
+    /**
+     * Relate a dataset to the graph coordinates of its DataPoints
+     */
+    class PointSet {
+        LinkedList<Point> points = new LinkedList<>();
+        DataSet dataSet;
+    }
+    LinkedList<PointSet> pointSets = new LinkedList<>();
 
     @Override
     public void draw(Canvas canvas) {
@@ -51,6 +85,11 @@ public class LineChartDrawable extends AbstractChartDrawable {
         displayGraph(r, canvas);
     }
 
+    /**
+     * Display a graph in the given bounds
+     * @param r
+     * @param canvas
+     */
     private void displayGraph(Rect r, Canvas canvas) {
         Paint axisPaint = PaintUtilities.getPaint(axisColor);
 
@@ -68,16 +107,39 @@ public class LineChartDrawable extends AbstractChartDrawable {
             showGrid(canvas,r);
         }
 
-        plotPoints(r,canvas);
+        plotDataSets(r, canvas);
     }
 
-    private void plotPoints(Rect r, Canvas canvas) {
-        double max = findMax();
+    /**
+     * Plot the data sets in the graph
+     * @param r
+     * @param canvas
+     */
+    private void plotDataSets(Rect r, Canvas canvas) {
+        pointSets.clear();
+        for(DataSet dataSet: data) {
+            PointSet pointSet = plotPoints(r,canvas,dataSet.getDataPoints());
+            pointSets.add(pointSet);
+            pointSet.dataSet = dataSet;
+            plotLine(r, canvas, pointSet);
+        }
+    }
+
+    /**
+     * Plot points on the graph, returning the calculated coordinate values for each plotted point
+     * @param r
+     * @param canvas
+     * @param dataPoints
+     * @return the graph coordinates for each DataPoint
+     */
+    private synchronized PointSet plotPoints(Rect r, Canvas canvas, List<DataPoint> dataPoints) {
+        PointSet pointSet = new PointSet();
+        double max = findMax(dataPoints);
 
         // plot the points where the point position is on the x axis and value is on the y axis
         // use point's position if not NaN
-        int minx = findMinX();
-        int maxx = findMaxX();
+        int minx = findMinX(dataPoints);
+        int maxx = findMaxX(dataPoints);
         for(int index = 0; index < dataPoints.size(); index++) {
             DataPoint dataPoint = dataPoints.get(index);
             Paint paint = PaintUtilities.getPaint(dataPoint.getColorARGB());
@@ -98,10 +160,39 @@ public class LineChartDrawable extends AbstractChartDrawable {
             y += dataPoint.getPointRadius()/2;
 
             canvas.drawCircle((float)x+r.left, (float)y, dataPoint.getPointRadius(), paint);
+            pointSet.points.add(new Point(x+r.left, y, dataPoint));
+        }
+        return pointSet;
+    }
+
+    /**
+     * Plot a line on the graph
+     * @param r
+     * @param canvas
+     * @param pointSet
+     */
+    private void plotLine(Rect r, Canvas canvas, PointSet pointSet) {
+        if(pointSet.dataSet.getLineType() == LineType.NONE) {
+            return;
+        }
+
+        Paint paint = PaintUtilities.getPaint(pointSet.dataSet.getColorARGB());
+        paint.setStrokeWidth(Math.max(1, pointSet.dataSet.getLineWidth()));
+        Point previous = null;
+        for(Point point: pointSet.points) {
+            if(previous == null) {
+                previous = point;
+                continue;
+            }
+            // drawLines requires replication of points to draw each segment.
+            // drawing individual segments here to reduce memory and not require translation to array
+            canvas.drawLine((float)previous.x,(float)previous.y,
+                    (float)point.x,(float)point.y, paint);
+            previous = point;
         }
     }
 
-    private int findMaxX() {
+    private int findMaxX(List<DataPoint> dataPoints) {
         double max = Double.MIN_VALUE;
         for(DataPoint point: dataPoints) {
             if(point.getPosition() > max) {
@@ -113,7 +204,7 @@ public class LineChartDrawable extends AbstractChartDrawable {
         return (int)(max+1.0);
     }
 
-    private int findMinX() {
+    private int findMinX(List<DataPoint> dataPoints) {
         double min = Double.MAX_VALUE;
         for(DataPoint point: dataPoints) {
             if(point.getPosition() < min) {
@@ -125,7 +216,7 @@ public class LineChartDrawable extends AbstractChartDrawable {
         return (int)Math.min(min-1.0,0);
     }
 
-    private double findMax() {
+    private double findMax(List<DataPoint> dataPoints) {
         double max = Double.MIN_VALUE;
         for(DataPoint point: dataPoints) {
             if(point.getValue() > max) {
@@ -202,23 +293,24 @@ public class LineChartDrawable extends AbstractChartDrawable {
         this.centerOrigin = centerOrigin;
     }
 
-    public LinkedList<DataPoint> getDataPoints() {
-        return dataPoints;
+    /**
+     * Add a set of points to display. Note that if the set includes negative
+     * values, center origin will be automatically selected.
+     * @param set
+     */
+    public synchronized void addDataSet(DataSet set) {
+        if(data.contains(set)) {
+            return;
+        }
+        data.add(set);
+        if(set.min < 0) {
+            setCenterOrigin(true);
+        }
     }
 
-    /**
-     * Set the points to display. Note that if the set includes negative
-     * values, center origin will be automatically selected.
-     * @param dataPoints
-     */
-    public void setDataPoints(LinkedList<DataPoint> dataPoints) {
-        this.dataPoints = dataPoints;
-        for(DataPoint point: dataPoints) {
-            if(point.getValue() < 0) {
-                setCenterOrigin(true);
-                break;
-            }
-        }
+    public synchronized void removeDataSet(DataSet set) {
+        data.remove(set);
+        this.invalidateSelf();
     }
 
     public int getMargin() {
@@ -245,53 +337,43 @@ public class LineChartDrawable extends AbstractChartDrawable {
         this.showGrid = showGrid;
     }
 
+    /**
+     * Returns the first DataPoint found matching the given event coordinates.
+     * @param event
+     * @return
+     */
     @Override
     public DataPoint getPointFor(MotionEvent event) {
-        Rect r = getBounds();
-        r = new Rect(
-                r.left+margin,
-                r.top+margin,
-                r.right-margin,
-                r.bottom-margin
-        );
-
-        double max = findMax();
-
-        // plot the points where the point position is on the x axis and value is on the y axis
-        // use point's position if not NaN
-        int minx = findMinX();
-        int maxx = findMaxX();
-
-        for(int index = 0; index < dataPoints.size(); index++) {
-            DataPoint dataPoint = dataPoints.get(index);
-
-            // first get the correct value - normalized
-            double x = ((dataPoint.getPosition() != Double.MIN_VALUE?dataPoint.getPosition():index+1) - minx);
-            double percentagex = x/(maxx-minx);
-            // now adjust to x coordinate
-            x = r.width() * percentagex;
-
-            double y = dataPoint.getValue();
-            double percentagey = y/max;
-            y = r.height() * percentagey;
-            // now flip it so it's bottom relative
-            y = r.bottom - y;
-
-            float rad = dataPoint.getPointRadius()/2;
-
-            // now take away half the radius. circle appears to draw x,y = bottom of circle not center
-            y += rad;
-
-            x += r.left;
-            // for a larger touch point - 34px is std
-            rad = Math.max(rad,17f);
-
-            if(event.getX() <= x+rad && event.getX() >= x-rad  &&
+        // more than one dataset can contain a given point. Use getPointsFor
+        for(PointSet pointSet: pointSets) {
+            for(Point point: pointSet.points) {
+                float rad = point.point.getPointRadius()/2;
+                // have to adjust so that y is center, not top
+                float y = (float) (point.y+rad);
+                if(event.getX() <= point.x+rad && event.getX() >= point.x-rad  &&
                     event.getY() <= y+rad && event.getY() >= y-rad) {
-                System.out.println("Point: "+dataPoint.getLabel()+" "+dataPoint.getValue());
-                return dataPoint;
+                    System.out.println("Point: " + point.point.getLabel() + " " + point.point.getValue());
+                    return point.point;
+                }
             }
         }
         return null;
+    }
+
+    public List<DataPoint> getPointsFor(MotionEvent event) {
+        LinkedList<DataPoint> points = new LinkedList<>();
+        for(PointSet pointSet: pointSets) {
+            for(Point point: pointSet.points) {
+                float rad = point.point.getPointRadius()/2;
+                // have to adjust so that y is center, not top
+                float y = (float) (point.y+rad);
+                if(event.getX() <= point.x+rad && event.getX() >= point.x-rad  &&
+                        event.getY() <= y+rad && event.getY() >= y-rad) {
+                    System.out.println("Point: " + point.point.getLabel() + " " + point.point.getValue());
+                    points.add(point.point);
+                }
+            }
+        }
+        return points;
     }
 }

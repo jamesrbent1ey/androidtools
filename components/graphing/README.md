@@ -1,9 +1,13 @@
 # Graphing Module 
 The Graphing Module provides visual graphs and charts for the Android environment.
 
-Decorators?
-it looks like datapoints could use decorators to set color, width, etc.
-why have a set of points when all bar and pie need are a single, max value. set of points more
-  appropriate for scatter or line.
-Drawable allows for dirty of a rect which is useful for animations.
-should be able to set background opacity to allow for overlays. May be affected by color.
+Each Chart is represented as a Drawable that may be inserted into an ImageView. The Drawables
+are light to allow for styling in the encapsulating View. For instance, chart titles and legends
+can be added better outside of Canvas.
+
+Each Drawable will return the DataPoint associated with an area that has been touched/clicked. The
+call to resolve the DataPoint is made from a View.OnTouchListener
+
+PieChartDrawable: Allows for rendering of Pie charts, Donut charts, and Gauges
+BarChartDrawable: Allows for rendering Bar charts
+LineChartDrawable: Allows for rendering line charts and scatter plots.

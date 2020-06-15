@@ -33,7 +33,9 @@ import java.util.LinkedList;
 
 import app.bentleyis.graphing.BarChartDrawable;
 import app.bentleyis.graphing.DataPoint;
+import app.bentleyis.graphing.DataSet;
 import app.bentleyis.graphing.LineChartDrawable;
+import app.bentleyis.graphing.LineType;
 import app.bentleyis.graphing.PieChartDrawable;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
@@ -81,7 +83,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         iv = findViewById(R.id.imageView3);
         m_lineChartDrawable = new LineChartDrawable();
-        m_lineChartDrawable.setDataPoints(points);
+        DataSet dataSet = new DataSet();
+        dataSet.setColorARGB(0xffd4af37);
+        dataSet.setLineWidth(5);
+        dataSet.setDataPoints(points);
+        dataSet.setLabel("data set");
+        dataSet.setLineType(LineType.LINE);
+        m_lineChartDrawable.addDataSet(dataSet);
         m_lineChartDrawable.setMargin(100);
         m_lineChartDrawable.setCenterOrigin(false);
 
