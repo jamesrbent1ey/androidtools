@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         dataSet.setLineWidth(5);
         dataSet.setDataPoints(points);
         dataSet.setLabel("data set");
-        dataSet.setLineType(LineType.LINE);
+        dataSet.setLineType(LineType.CURVE);
         m_lineChartDrawable.addDataSet(dataSet);
         m_lineChartDrawable.setMargin(100);
         m_lineChartDrawable.setCenterOrigin(false);

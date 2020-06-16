@@ -22,8 +22,10 @@
 
 package app.bentleyis.graphing;
 
+import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
@@ -127,6 +129,7 @@ public class LineChartDrawable extends AbstractChartDrawable {
 
     /**
      * Plot points on the graph, returning the calculated coordinate values for each plotted point
+     * TODO re-check with center origin
      * @param r
      * @param canvas
      * @param dataPoints
@@ -172,8 +175,17 @@ public class LineChartDrawable extends AbstractChartDrawable {
      * @param pointSet
      */
     private void plotLine(Rect r, Canvas canvas, PointSet pointSet) {
-        if(pointSet.dataSet.getLineType() == LineType.NONE) {
-            return;
+        switch (pointSet.dataSet.getLineType()) {
+            case NONE:
+                return;
+            case BEST_FIT:
+                plotLineOfBestFit(r,canvas,pointSet);
+                return;
+            case CURVE:
+                plotCurve(r,canvas,pointSet);
+                return;
+            default:
+                break;
         }
 
         Paint paint = PaintUtilities.getPaint(pointSet.dataSet.getColorARGB());
@@ -189,6 +201,97 @@ public class LineChartDrawable extends AbstractChartDrawable {
             canvas.drawLine((float)previous.x,(float)previous.y,
                     (float)point.x,(float)point.y, paint);
             previous = point;
+        }
+    }
+
+    // todo - refactor to remove un used calculations and make more generic including center origin
+    private void plotCurve(Rect r, Canvas canvas, PointSet pointSet) {
+        double centerx = 0.0;
+        double centery = 0.0;
+        double minx = pointSet.points.getFirst().x;
+        double maxy = pointSet.points.getFirst().y;
+        double maxx = pointSet.points.getFirst().x;
+        double miny = pointSet.points.getFirst().y;
+
+        Paint paint = PaintUtilities.getPaint(pointSet.dataSet.getColorARGB());
+        // don't fill
+        paint.setStyle(Paint.Style.STROKE);
+        // width of line
+        paint.setStrokeWidth(Math.max(1, pointSet.dataSet.getLineWidth()));
+
+        for(Point point: pointSet.points) {
+            centerx += point.x;
+            centery += point.y;
+            minx = Math.min(point.x, minx);
+            maxy = Math.max(point.y, maxy);
+            miny = Math.min(point.y, miny);
+            maxx = Math.max(point.x, maxx);
+        }
+        centerx /= pointSet.points.size();
+        centery /= pointSet.points.size();
+        double rady = maxy - centery;
+        double rad = Math.sqrt((centerx*centerx)+(centery*centery));
+        double deltay = (rad - rady);
+
+        // this adjusts x so that the center is aligned with the last point. sweep angle starts at 90 degrees
+        double dx = rad-(maxx-minx); //represents the left of the arc's bounding rectangle
+
+        // calculate the sweep angle based on the first point in the set
+        double leg1 = pointSet.points.getFirst().x - (dx+rad);// dx+rad is our true centerx
+        double angle = Math.toDegrees(Math.acos(leg1/rad));
+
+        // draw w/o including center in set of points - not closed
+        canvas.drawArc(
+                (float)(dx), (float)((maxy-deltay) - (2*rad)),
+                (float)((dx) + (2*rad)), (float)(maxy),
+                90f, (float) (angle -90.0),
+                false,
+                paint
+        );
+
+    }
+
+    private void plotLineOfBestFit(Rect r, Canvas canvas, PointSet pointSet) {
+        double x_mean = 0.0;
+        double y_mean = 0.0;
+        double slope;
+        double y_min = r.top;
+        double x_min = r.left;
+
+        Paint paint = PaintUtilities.getPaint(pointSet.dataSet.getColorARGB());
+        paint.setStrokeWidth(Math.max(1, pointSet.dataSet.getLineWidth()));
+
+        for(Point p: pointSet.points) {
+            x_mean += p.x;
+            y_mean += p.y;
+            y_min = Math.min(p.y, y_min);
+            x_min = Math.min(p.x, x_min);
+        }
+        x_mean /= pointSet.points.size();
+        y_mean /= pointSet.points.size();
+
+        double numerator = 0.0;
+        double denominator = 0.0;
+        double deviation;
+        for(Point p: pointSet.points) {
+            deviation = p.x - x_mean;
+            numerator += deviation*(p.y - y_mean);
+            denominator += deviation*deviation;
+        }
+        slope = numerator/denominator;
+        double b = y_mean - (slope * x_mean); // y-intercept
+        double x = (-b)/slope;
+
+        // different for center origin
+        if(centerOrigin) {
+            canvas.drawLine( r.centerX() + (float)x_min, r.centerY() + (float)b,
+                    (float)(r.centerX() + x_min + x), r.bottom,
+                    paint );
+        } else {
+            Point firstPoint = pointSet.points.getFirst();
+            canvas.drawLine((float) (firstPoint.x + x_min), (float) (y_min + b),
+                    (float) (firstPoint.x + x_min + x), r.bottom,
+                    paint);
         }
     }
 
